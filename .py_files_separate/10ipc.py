@@ -13,7 +13,7 @@ from tensorflow.keras.optimizers import Adam
 import logging
 from time import time
 
-input_10 = torch.load('/Users/alexchien/Downloads/res_DC_MNIST_ConvNet_10ipc.pt')   #<------Use filepath to the 10ipc .pt file
+input_10 = torch.load('<--filepath-->')         #<------Use filepath to the 10ipc .pt file
 
 # print(input_10['data'][0])
 

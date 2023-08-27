@@ -13,7 +13,7 @@ from tensorflow.keras.optimizers import Adam
 import logging
 from time import time
 
-input = torch.load('/Users/alexchien/Desktop/res_DC_MNIST_ConvNet_1ipc.pt')          #<------Use filepath to the 10ipc .pt file
+input = torch.load('<--filepath-->')        #<------Use filepath to the 1ipc .pt file
 
 #Check visualization of a single synthetic set without labels
 # print(input['data'][0][0])
