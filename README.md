@@ -22,11 +22,11 @@ In order to obtain a more numerically accurate version of the loss function, a l
 The probability distribution is then obtained by performing Softmax on the resulting logits.
 
 ## Results
-| Training Data Type  | # of Training Images | Accuracy (%) |
-| ------------------- | -------------------- | ------------ |
-| Raw MNIST  Images   |          300         |      72      |
-| 1ipc Distilled      |           30         |      <68     |
-| 10ipc Distilled     |          300         |      92      |
+| Training Data Type  | # of Training Images | Test Accuracy (%) |
+| ------------------- | -------------------- | ----------------- |
+| Raw MNIST  Images   |          300         |      72           |
+| 1ipc Distilled      |           30         |      <68          |
+| 10ipc Distilled     |          300         |      92           |
 
 ### Distilled Datasets Used:  [[URL]](https://github.com/VICO-UoE/DatasetCondensation/tree/master)
 - res_DC_MNIST_ConvNet_1ipc.pt
