@@ -1,15 +1,7 @@
 import numpy as np
 import torch
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import AveragePooling2D
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.activations import relu,linear
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam
+from model import lenet_5
 import logging
 from time import time
 
@@ -34,6 +26,7 @@ X_cv = X[3]
 X_test = X[4]
 
 #Extract input_shape of a single image: (height, width, channels)
+#Batch size = 1ipc * 10 classes
 batch_size, height, width, channels = X_train[0].shape
 print('Batch_size: ', batch_size, ' Height: ', height, ' Width: ', width, ' Channels: ', channels)
 
@@ -50,41 +43,15 @@ y_train = y[:3]
 y_cv = y[3]
 y_test = y[4]
 
+#To prevent an excessive messages when running
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
 #Set global seed so that results don't vary across runs
 tf.random.set_seed(1234)
 
-model = Sequential(
-    [
-    #conv layer 1 (relu)
-    Conv2D(input_shape = (height, width, channels), filters=6, kernel_size=5, strides=1, padding='same', activation='relu', name='conv1'),
-    #avg pooling
-    AveragePooling2D(pool_size=2, strides=2, name='pooling1'),
-    #conv layer 2 (relu)
-    Conv2D(filters=16, kernel_size=5, strides=1, padding='valid', activation='relu', name='conv2'),
-    #avg pooling
-    AveragePooling2D(pool_size=2, strides=2, name='pooling2'),
-    #conv layer 3 (relu)
-    Conv2D(filters=120, kernel_size=5, strides=1, padding='valid', activation='relu', name='conv3'),
-    #flatten
-    Flatten(),
-    #fully connected layer 1 (relu)
-    Dense(84, activation='relu', name='dense1', kernel_regularizer=tf.keras.regularizers.l2(0.1)),
-    #fully connected layer 2 (linear)
-    Dense(10, activation='linear', name='dense2')
-    ], name='LeNet-5'
-)
-# filters are the same as output channel
+model = lenet_5.compile(height, width, channels)
 
-model.compile(
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=1e-2),
-    metrics=['accuracy']
-)
-
-start = time()
-
+#Combine input tensors since model expects 1 input tensor (simplifies process so we can treat input as single entity instead of multiple for each tensor)
 #Initialize lists so that their values are reset every time the Jupyter notebook is run
 X_train_combined=[]
 y_train_combined=[]
@@ -101,33 +68,24 @@ for i in range(len(X_train)):
         y_train_combined = y_temp
         break
 
-#Display duration
+start = time()
+
+tf.keras.backend.clear_session()
+lenet_5.train(model, X_train_combined, y_train_combined, 300, X_cv, y_cv)
+
+#Calculate training duration
 duration = time() - start
-print(f'Took {duration:.5f} seconds')
 
-model.fit(X_train_combined, y_train_combined, epochs=300, validation_data=(X_cv, y_cv))
+#Model trained on 1ipc distilled MNIST data
+#Tested on normal MNIST data
 
-# Calculate the categorization error
-#y: target value
-#yhat: predicted value
-#cerr: % incorrect
+(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+test_count = 600
+test_images = test_images[:test_count]
+test_labels = test_labels[:test_count]
 
-def eval_cat_err(y, yhat):
-    m = len(y)
-    incorrect = 0
-    for i in range(m):
-       if yhat[i] != y[i]:
-            incorrect+=1
-    cerr = incorrect / m
-    
-    return(cerr)
+training_cerr, test_cerr = lenet_5.evaluate(model, X_train_combined, y_train_combined, test_images, test_labels)
 
-#make a model for plotting routines to call
-model_predict = lambda Xl: np.argmax(tf.nn.softmax(model.predict(Xl)).numpy(),axis=1)
-
-training_cerr = eval_cat_err(y_train_combined, model_predict(X_train_combined))
-cv_cerr = eval_cat_err(y_cv, model_predict(X_cv))
-test_cerr = eval_cat_err(y_test, model_predict(X_test))
-print(f"categorization error, training, regularized, 1ipc: {training_cerr:0.7f}" )
-print(f"categorization error, cv,       regularized, 1ipc: {cv_cerr:0.7f}" )
-print(f"categorization error, test,     regularized, 1ipc: {test_cerr:0.7f}" )
+print(f"Training Accuracy    (regularized, distilled: 1ipc, 30 images): {1-training_cerr:0.7f}" )
+print(f"Test Accuracy        (regularized, distilled: 1ipc, 10 images): {1-test_cerr:0.7f}" )
+print(f"Time to Train        (regularized, distilled: 1ipc, 30 images): {duration:0.5f}" )

@@ -1,15 +1,7 @@
 import numpy as np
 import torch
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import AveragePooling2D
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.activations import relu,linear
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam
+from model import lenet_5
 import logging
 from time import time
 
@@ -51,37 +43,7 @@ logging.getLogger("tensorflow").setLevel(logging.ERROR)
 #Set global seed so that results don't vary across runs
 tf.random.set_seed(1234)
 
-model_10 = Sequential(
-    [
-    #conv layer 1 (relu)
-    Conv2D(input_shape = (height_10, width_10, channels_10), filters=6, kernel_size=5, strides=1, padding='same', activation='relu', name='conv1'),
-    #avg pooling
-    AveragePooling2D(pool_size=2, strides=2, name='pooling1'),
-    #conv layer 2 (relu)
-    Conv2D(filters=16, kernel_size=5, strides=1, padding='valid', activation='relu', name='conv2'),
-    #avg pooling
-    AveragePooling2D(pool_size=2, strides=2, name='pooling2'),
-    #conv layer 3 (relu)
-    Conv2D(filters=120, kernel_size=5, strides=1, padding='valid', activation='relu', name='conv3'),
-    #flatten
-    Flatten(),
-    #fully connected layer 1 (relu)
-    Dense(84, activation='relu', name='dense1', kernel_regularizer=tf.keras.regularizers.l2(0.1)),
-    #fully connected layer 2 (linear)
-    Dense(10, activation='linear', name='dense2')
-    ], name='LeNet-5'
-)
-# filters are the same as output channel
-
-model_10.compile(
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=1e-2),
-    metrics=['accuracy']
-)
-
-#With 10ipc (images per class), we have batch sizes of 100 so the train set size is 300
-
-start = time()
+model = lenet_5.compile(height_10, width_10, channels_10)
 
 #Initialize lists so that their values are reset every time the Jupyter notebook is run
 X10_train_combined=[]
@@ -99,33 +61,25 @@ for i in range(len(X10_train)):
         y10_train_combined = y_temp
         break
 
+
+start = time()
+
+tf.keras.backend.clear_session()
+lenet_5.train(model, X10_train_combined, y10_train_combined, 300, X10_cv, y10_cv)
+
 # calculate and report duration of concatenation
 duration = time() - start
-print(f'Took {duration:.5f} seconds')
 
-model_10.fit(X10_train_combined, y10_train_combined, epochs=300, validation_data=(X10_cv, y10_cv))
+#Model trained on 10ipc distilled MNIST data
+#Tested on normal MNIST data
 
-# Calculate the categorization error
-#y: target value
-#yhat: predicted value
-#cerr: % incorrect
+(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+test_count = 600
+test_images = test_images[:test_count]
+test_labels = test_labels[:test_count]
 
-def eval_cat_err(y, yhat):
-    m = len(y)
-    incorrect = 0
-    for i in range(m):
-       if yhat[i] != y[i]:
-            incorrect+=1
-    cerr = incorrect / m
-    
-    return(cerr)
+training_cerr, test_cerr = lenet_5.evaluate(model, X10_train_combined, y10_train_combined, test_images, test_labels)
 
-#make a model for plotting routines to call
-model_predict_10 = lambda Xl: np.argmax(tf.nn.softmax(model_10.predict(Xl)).numpy(),axis=1)
-
-training_cerr_10 = eval_cat_err(y10_train_combined, model_predict_10(X10_train_combined))
-cv_cerr_10 = eval_cat_err(y10_cv, model_predict_10(X10_cv))
-test_cerr_10 = eval_cat_err(y10_test, model_predict_10(X10_test))
-print(f"categorization error, training, regularized, 10ipc: {training_cerr_10:0.5f}" )
-print(f"categorization error, cv,       regularized, 10ipc: {cv_cerr_10:0.5f}" )
-print(f"categorization error, test,     regularized, 10ipc: {test_cerr_10:0.5f}" )
+print(f"Training Accuracy  (regularized, distilled: 10ipc, 300 images): {1-training_cerr:0.7f}" )
+print(f"Test Accuracy      (regularized, distilled: 10ipc, 600 images): {1-test_cerr:0.7f}" )
+print(f"Time to Train      (regularized, distilled: 10ipc, 300 images): {duration:0.5f}" )
