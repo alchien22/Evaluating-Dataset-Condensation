@@ -29,7 +29,7 @@ logging.getLogger("tensorflow").setLevel(logging.ERROR)
 start = time()
 
 tf.keras.backend.clear_session()
-lenet_5.train(model, train_images, train_labels, 300, None, None)
+lenet_5.train(model, train_images, train_labels, 30, None, None)
 
 #Calculate training duration
 duration = time() - start

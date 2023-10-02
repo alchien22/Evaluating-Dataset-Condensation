@@ -5,7 +5,7 @@ from model import lenet_5
 import logging
 from time import time
 
-input_10 = torch.load('<--filepath-->')         #<------Use filepath to the 10ipc .pt file
+input_10 = torch.load('/Users/alexchien/Desktop/res_DC_MNIST_ConvNet_10ipc.pt')         #<------Use filepath to the 10ipc .pt file
 
 # print(input_10['data'][0])
 
@@ -22,6 +22,7 @@ X10_train = X_10[:3]
 X10_cv = X_10[3]
 X10_test = X_10[4]
 
+#batch_size = 10ipc * 10classes = 300
 batch_size_10, height_10, width_10, channels_10 = X10_train[0].shape
 print('Batch_size: ', batch_size_10, ' Height: ', height_10, ' Width: ', width_10, ' Channels: ', channels_10)
 
@@ -65,7 +66,7 @@ for i in range(len(X10_train)):
 start = time()
 
 tf.keras.backend.clear_session()
-lenet_5.train(model, X10_train_combined, y10_train_combined, 300, X10_cv, y10_cv)
+lenet_5.train(model, X10_train_combined, y10_train_combined, 30, X10_cv, y10_cv)
 
 # calculate and report duration of concatenation
 duration = time() - start

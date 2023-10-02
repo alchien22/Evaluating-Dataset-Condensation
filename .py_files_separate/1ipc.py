@@ -5,7 +5,7 @@ from model import lenet_5
 import logging
 from time import time
 
-input = torch.load('<--filepath-->')        #<------Use filepath to the 1ipc .pt file
+input = torch.load('/Users/alexchien/Desktop/res_DC_MNIST_ConvNet_1ipc.pt')        #<------Use filepath to the 1ipc .pt file
 
 #Check visualization of a single synthetic set without labels
 # print(input['data'][0][0])
@@ -71,7 +71,7 @@ for i in range(len(X_train)):
 start = time()
 
 tf.keras.backend.clear_session()
-lenet_5.train(model, X_train_combined, y_train_combined, 300, X_cv, y_cv)
+lenet_5.train(model, X_train_combined, y_train_combined, 30, X_cv, y_cv)
 
 #Calculate training duration
 duration = time() - start
